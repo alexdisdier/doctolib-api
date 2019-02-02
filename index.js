@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const dateFns = require("date-fns");
 
 const app = express(); // Initializing the server
 app.use(bodyParser.json()); // This will enable us to obtain the params transmetted through the POST Method.
@@ -10,36 +11,54 @@ const slotsTemplate = require("./slotsTemplate.json");
 // Array in which we'll push the new bookings.
 const booking = [];
 
-// ===== ROUTES ======= //
+////////////////////////
+// ROUTES DECLARATION //
+////////////////////////
 
 // http://localhost:3000/
 app.get("/", (req, res) => {
   res.send("Welcome to the doctolib api");
 });
 
-// http://localhost:3000/visits METHOD GET
+// READ
+// param query: date
 app.get("/visits", (req, res) => {
+
   const checkDate = req.query.date;
 
-  for (let i = 0; i < booking.length; i++) {
-    if (booking[i].date === checkDate) {
-      return res.json(booking[i]);
+  isPastNotSunday(req.query.date, res);
+
+  if (checkDate) {
+    for (let i = 0; i < booking.length; i++) {
+      if (booking[i].date === checkDate) {
+        return res.json(booking[i]);
+      }
     }
+
+    const newEntry = {
+      date: checkDate,
+      slots: {
+        ...slotsTemplate
+      }
+    };
+
+    booking.push(newEntry);
+
+    res.json(newEntry);
+  } else {
+    res.status(400).json({
+      message: "Bad Request",
+      solution: "Try entering a query date in url"
+    })
   }
 
-  const newEntry = {
-    date: checkDate,
-    slots: { ...slotsTemplate
-    }
-  };
-
-  booking.push(newEntry);
-
-  res.json(newEntry);
 });
 
-// http://localhost:3000/visits METHOD POST
-app.post("/visits", (req, res) => {
+// CREATE
+// params body: date, slot, name
+app.post("/visits/booking", (req, res) => {
+  isPastNotSunday(req.body.date, res);
+
   const checkDate = req.body.date;
   const slot = req.body.slot;
   const name = req.body.name;
@@ -51,39 +70,70 @@ app.post("/visits", (req, res) => {
       message: "Slot already booked"
     }
   };
+  const key = generateKey(20);
 
-  for (let i = 0; i < booking.length; i++) {
-    if (booking[i].date === checkDate) {
-      if (booking[i].slots[slot]["isAvailable"] === true) {
-        const tempObj = {
-          isAvailable: false,
-          name: name
+  if (checkDate && slot && name) {
+
+    for (let i = 0; i < booking.length; i++) {
+      if (booking[i].date === checkDate) {
+        if (booking[i].slots[slot]["isAvailable"] === true) {
+          const tempObj = {
+            isAvailable: false,
+            name: name,
+            key: key
+          }
+          booking[i].slots[slot] = tempObj;
+          return res.json(success);
+        } else {
+          return res.json(failure);
         }
-        booking[i].slots[slot] = tempObj;
-        return res.json(success);
-      } else {
-        return res.json(failure);
       }
     }
-  }
 
-  const newEntry = {
-    date: checkDate,
-    slots: { ...slotsTemplate
+    const newEntry = {
+      date: checkDate,
+      slots: {
+        ...slotsTemplate
+      }
+    };
+
+    newEntry.slots[slot] = {
+      name: name,
+      isAvailable: false,
+      key: key
     }
-  };
 
-  newEntry.slots[slot] = {
-    name: name,
-    isAvailable: false
+    booking.push(newEntry);
+
+    res.json(success);
+  } else {
+    res.status(400).json({
+      message: "bad request",
+      solution: "make sure you entered 3 body queries"
+    })
   }
 
-  booking.push(newEntry);
-
-  res.json(success);
 });
 
-// ============= //
+// === FUNCTIONS === //
+const isPastNotSunday = (date, res) => {
+  // Week starts on sunday which is 0. Saturday is 6. 
+  if (dateFns.isPast(date) || dateFns.getDay(date) === 0) {
+    return res.status(400).json({
+      message: "query dates have to be from today's date and cannot be on Sundays"
+    })
+  }
+}
+
+const generateKey = n => {
+  let text = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < n; i++)
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+  return text;
+};
 
 // Manage pages not found
 app.all("*", function (req, res) {
