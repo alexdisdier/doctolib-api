@@ -26,10 +26,6 @@ Functionality:
 
 - a patient cannot view, nor reserve a date in the past, nor on Sundays.
 
-🚧 Last Functionalities to implement:
-
-- create an independent project Doctolib-patient which can book a time slot from the terminal
-
 ## Directory Structure
 
 ```bash
