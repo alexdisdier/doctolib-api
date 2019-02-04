@@ -28,7 +28,7 @@ Functionality:
 
 🚧 Last Functionalities to implement:
 
-- create an independent project Doctolib-patient which can book a time slot from the terminal.
+- create an independent project Doctolib-patient which can book a time slot from the terminal
 
 ## Directory Structure
 

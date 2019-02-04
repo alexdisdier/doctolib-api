@@ -150,8 +150,7 @@ const isPastNotSunday = (date, res) => {
   // Week starts on sunday which is 0. Saturday is 6.
   if (dateFns.isPast(date) || dateFns.getDay(date) === 0) {
     return res.status(400).json({
-      message:
-        "query dates have to be from today's date and cannot be on Sundays"
+      message: "query dates have to be from today's date and cannot be on Sundays"
     });
   }
 };
@@ -168,7 +167,7 @@ const generateKey = n => {
 };
 
 // Manage pages not found
-app.all("*", function(req, res) {
+app.all("*", function (req, res) {
   res.status(400).send("Page not found");
 });
 
