@@ -24,19 +24,17 @@ This is a booking API. We'll be using doctolib as an example.
 
 Functionality:
 
-- a client cannot view, nor reserve a date in the past or on Sundays.
+- a patient cannot view, nor reserve a date in the past, nor on Sundays.
 
 🚧 Last Functionalities to implement:
 
-- a web service to cancel a reservation.
-- Create a web service to cancel a reservation.
+- create an independent project Doctolib-patient which can book a time slot from the terminal.
 
 ## Directory Structure
 
 ```bash
 
 doctolib_api
-├── .git
 ├── .gitignore
 ├── index.js
 ├── package.json

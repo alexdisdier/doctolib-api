@@ -23,7 +23,6 @@ app.get("/", (req, res) => {
 // READ
 // param query: date
 app.get("/visits", (req, res) => {
-
   const checkDate = req.query.date;
 
   isPastNotSunday(req.query.date, res);
@@ -49,9 +48,8 @@ app.get("/visits", (req, res) => {
     res.status(400).json({
       message: "Bad Request",
       solution: "Try entering a query date in url"
-    })
+    });
   }
-
 });
 
 // CREATE
@@ -70,18 +68,17 @@ app.post("/visits/booking", (req, res) => {
       message: "Slot already booked"
     }
   };
-  const key = generateKey(20);
+  const id = generateKey(20);
 
   if (checkDate && slot && name) {
-
     for (let i = 0; i < booking.length; i++) {
       if (booking[i].date === checkDate) {
         if (booking[i].slots[slot]["isAvailable"] === true) {
           const tempObj = {
             isAvailable: false,
             name: name,
-            key: key
-          }
+            id: id
+          };
           booking[i].slots[slot] = tempObj;
           return res.json(success);
         } else {
@@ -100,8 +97,8 @@ app.post("/visits/booking", (req, res) => {
     newEntry.slots[slot] = {
       name: name,
       isAvailable: false,
-      key: key
-    }
+      id: id
+    };
 
     booking.push(newEntry);
 
@@ -110,24 +107,59 @@ app.post("/visits/booking", (req, res) => {
     res.status(400).json({
       message: "bad request",
       solution: "make sure you entered 3 body queries"
-    })
+    });
   }
+});
 
+// CANCEL BOOKING
+// params query: id
+app.get("/visits/cancel", (req, res) => {
+  const id = req.query.id;
+  const success = {
+    message: "Booking cancelled"
+  };
+  const failure = {
+    error: {
+      message: "No booking available with this id"
+    }
+  };
+
+  if (id) {
+    for (let i = 0; i < booking.length; i++) {
+      for (let key in booking[i].slots) {
+        if (booking[i].slots[key].id === id) {
+          const tempObj = {
+            isAvailable: true
+          };
+          booking[i].slots[key] = tempObj;
+          return res.json(success);
+        }
+      }
+    }
+    return res.json(failure);
+  } else {
+    res.status(400).json({
+      message: "bad request",
+      solution: "no id submitted in url"
+    });
+  }
 });
 
 // === FUNCTIONS === //
 const isPastNotSunday = (date, res) => {
-  // Week starts on sunday which is 0. Saturday is 6. 
+  // Week starts on sunday which is 0. Saturday is 6.
   if (dateFns.isPast(date) || dateFns.getDay(date) === 0) {
     return res.status(400).json({
-      message: "query dates have to be from today's date and cannot be on Sundays"
-    })
+      message:
+        "query dates have to be from today's date and cannot be on Sundays"
+    });
   }
-}
+};
 
 const generateKey = n => {
   let text = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
   for (var i = 0; i < n; i++)
     text += possible.charAt(Math.floor(Math.random() * possible.length));
@@ -136,7 +168,7 @@ const generateKey = n => {
 };
 
 // Manage pages not found
-app.all("*", function (req, res) {
+app.all("*", function(req, res) {
   res.status(400).send("Page not found");
 });
 
