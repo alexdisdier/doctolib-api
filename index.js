@@ -1,177 +1,66 @@
 const express = require("express");
-const bodyParser = require("body-parser");
-const dateFns = require("date-fns");
-
 const app = express(); // Initializing the server
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+require("dotenv").config({
+  path: "variables.env"
+});
+
+const {
+  DATABASE_NAME
+} = process.env;
+
 app.use(bodyParser.json()); // This will enable us to obtain the params transmetted through the POST Method.
 
-// Default json files to try the api.
-const slotsTemplate = require("./slotsTemplate.json");
+/////////////////////////
+// DATABASE CONNECTION //
+/////////////////////////
 
-// Array in which we'll push the new bookings.
-const booking = [];
+mongoose.connect(process.env.MONGODB_URI || `mongodb://localhost/${DATABASE_NAME}`, {
+  useNewUrlParser: true
+})
+
+////////////////////////
+// MODEL DECLARATION //
+////////////////////////
+// Initialize the collections
+// Mongoose will take into account these collections
+require("./models/booking");
 
 ////////////////////////
 // ROUTES DECLARATION //
 ////////////////////////
+
+// HOMEPAGE
+app.get('/', (req, res) => {
+  res.send(`
+    LINKS to other routes:
+    1. View Schedule: /visits
+    2. Book appointment: /visits/booking
+    3. Cancel appointment: /visits/cancel
+  `)
+});
 
 // http://localhost:3000/
 app.get("/", (req, res) => {
   res.send("Welcome to the doctolib api");
 });
 
-// READ
-// param query: date
-app.get("/visits", (req, res) => {
-  const checkDate = req.query.date;
+const visitsRoutes = require("./routes/visits");
 
-  isPastNotSunday(req.query.date, res);
+// Active the routes
+app.use(visitsRoutes);
 
-  if (checkDate) {
-    for (let i = 0; i < booking.length; i++) {
-      if (booking[i].date === checkDate) {
-        return res.json(booking[i]);
-      }
-    }
-
-    const newEntry = {
-      date: checkDate,
-      slots: {
-        ...slotsTemplate
-      }
-    };
-
-    booking.push(newEntry);
-
-    res.json(newEntry);
-  } else {
-    res.status(400).json({
-      message: "Bad Request",
-      solution: "Try entering a query date in url"
-    });
-  }
-});
-
-// CREATE
-// params body: date, slot, name
-app.post("/visits/booking", (req, res) => {
-  isPastNotSunday(req.body.date, res);
-
-  const checkDate = req.body.date;
-  const slot = req.body.slot;
-  const name = req.body.name;
-  const success = {
-    message: "Successfuly booked"
-  };
-  const failure = {
-    error: {
-      message: "Slot already booked"
-    }
-  };
-  const id = generateKey(20);
-
-  if (checkDate && slot && name) {
-    for (let i = 0; i < booking.length; i++) {
-      if (booking[i].date === checkDate) {
-        if (booking[i].slots[slot]["isAvailable"] === true) {
-          const tempObj = {
-            isAvailable: false,
-            name: name,
-            id: id
-          };
-          booking[i].slots[slot] = tempObj;
-          return res.json(success);
-        } else {
-          return res.json(failure);
-        }
-      }
-    }
-
-    const newEntry = {
-      date: checkDate,
-      slots: {
-        ...slotsTemplate
-      }
-    };
-
-    newEntry.slots[slot] = {
-      name: name,
-      isAvailable: false,
-      id: id
-    };
-
-    booking.push(newEntry);
-
-    res.json(success);
-  } else {
-    res.status(400).json({
-      message: "bad request",
-      solution: "make sure you entered 3 body queries"
-    });
-  }
-});
-
-// CANCEL BOOKING
-// params query: id
-app.get("/visits/cancel", (req, res) => {
-  const id = req.query.id;
-  const success = {
-    message: "Booking cancelled"
-  };
-  const failure = {
-    error: {
-      message: "No booking available with this id"
-    }
-  };
-
-  if (id) {
-    for (let i = 0; i < booking.length; i++) {
-      for (let key in booking[i].slots) {
-        if (booking[i].slots[key].id === id) {
-          const tempObj = {
-            isAvailable: true
-          };
-          booking[i].slots[key] = tempObj;
-          return res.json(success);
-        }
-      }
-    }
-    return res.json(failure);
-  } else {
-    res.status(400).json({
-      message: "bad request",
-      solution: "no id submitted in url"
-    });
-  }
-});
-
-// === FUNCTIONS === //
-const isPastNotSunday = (date, res) => {
-  // Week starts on sunday which is 0. Saturday is 6.
-  if (dateFns.isPast(date) || dateFns.getDay(date) === 0) {
-    return res.status(400).json({
-      message: "query dates have to be from today's date and cannot be on Sundays"
-    });
-  }
-};
-
-const generateKey = n => {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-  for (var i = 0; i < n; i++)
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-  return text;
-};
+/////////////////////
+// STARTING SERVER //
+/////////////////////
 
 // Manage pages not found
 app.all("*", function (req, res) {
   res.status(400).send("Page not found");
 });
 
-// Choosing the port to listen
-app.listen(3000, () => {
-  console.log("Server has started");
+// Choosing the ports to listen depending if we are in production using Heroku or in Development mode
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server started");
 });

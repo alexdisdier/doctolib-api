@@ -75,6 +75,8 @@ ps. I recommend to install [Postman](https://www.getpostman.com/) to improve the
 - [body-parser](https://www.npmjs.com/package/body-parser)
 - [Nodemon](https://www.npmjs.com/package/nodemon)
 - [date-fns](https://www.npmjs.com/package/date-fns)
+- [mongoose](https://www.npmjs.com/package/mongoose)
+- [dotenv](https://www.npmjs.com/package/dotenv)
 
 ## Acknowledgments
 
